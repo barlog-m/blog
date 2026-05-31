@@ -192,3 +192,10 @@ to check if it works use `i2cdetect -l` as root
 [ALHP](https://somegit.dev/ALHP/ALHP.GO)
 
 
+### Improve RNG
+
+```bash
+sudo pacman -S rng-tools
+sudo systemctl enable --now rngd
+```
+
