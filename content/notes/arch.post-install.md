@@ -56,15 +56,6 @@ root	hard	nproc  	65536   	# Prevent root from not being able to launch enough p
 *	    hard	nofile  1048576
 ```
 
-### Time synchronization
-
-[Network Time Protocol daemon](https://wiki.archlinux.org/index.php/Network_Time_Protocol_daemon)
-
-```bash
-$ pacman -S ntp
-$ systemctl enable ntpdate.service
-```
-
 ### SSD
 
 Enable periodical trim (once a week by default)
