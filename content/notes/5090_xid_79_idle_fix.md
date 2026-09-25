@@ -1,7 +1,6 @@
 +++
 title = "RTX 5090 Xid 79 on idle fix"
 date = 2026-09-24
-draft = true
 +++
 
 I run [CachyOS](https://cachyos.org/) btw.
@@ -22,6 +21,8 @@ But it turns out it only disables L1.1 and L1.2 states of ASPM, but not ASPM its
 Also, the kernel parameter `pcie_aspm=off` does not disable ASPM, it disables the kernel's ability to manipulate ASPM.
 If you use this parameter, you have to remove it.
 
+To disable ASPM, use the kernel boot parameter `pcie_aspm.policy=performance`
+
 If your GPU is PCI device 01:00.0, you can check ASPM state with this command
 ```
 sudo lspci -vvv -s 01:00.0 | grep -A3 LnkCtl
@@ -31,64 +32,6 @@ We are going to achieve a result like this
 ```
 LnkCtl: ASPM Disabled; RCB 64 bytes, LnkDisable- CommClk+
     ExtSynch- ClockPM- AutWidDis- BWInt- AutBWInt- FltModeDis-
-```
-
-To identify which PCI device is your GPU use `sudo lspci` and look for something like this
-```
-01:00.0 VGA compatible controller: NVIDIA Corporation GB202 [GeForce RTX 5090] (rev a1)
-```
-
-And there is a tricky part. We also have to disable ASPM on the upstream PCI bridge.
-To identify it, use the command `lspci -t` and look where your GPU is connected.
-
-My GPU is at 01:00.0 — meaning it's on bus 01, device 00, function 0.
-
-```
--[0000:00]-+-00.0
-           +-00.2
-           +-01.0
-           +-01.1-[01]--+-00.0   <- bus [01] hangs off this port
-           |            \-00.1
-```
-
-That means the upstream bridge is 01.1 at root 0000:00 `00:01.1`
-And you can check ASPM state using this command
-```
-sudo lspci -vvv -s 00:01.1 | grep -A3 LnkCtl
-```
-
-To disable ASPM use these two commands
-```
-sudo setpci -s 00:01.1 CAP_EXP+10.w=0000:0003
-sudo setpci -s 01:00.0 CAP_EXP+10.w=0000:0003
-```
-
-But it's better to make it a systemd service
-
-Create the file
-```
-sudo nvim /etc/systemd/system/disable-aspm.service
-```
-
-With this content
-```
-[Unit]
-Description=Disable PCIe ASPM at hardware register level
-After=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/setpci -s 00:01.1 CAP_EXP+10.w=0000:0003
-ExecStart=/usr/bin/setpci -s 01:00.0 CAP_EXP+10.w=0000:0003
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and run it
-```
-sudo systemctl enable --now disable-aspm.service
 ```
 
 ### Bonus: things that could be connected to stability I achieved
