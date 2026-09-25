@@ -1,6 +1,7 @@
 +++
 title = "RTX 5090 Xid 79 on idle fix"
 date = 2026-09-24
+draft = true
 +++
 
 I run [CachyOS](https://cachyos.org/) btw.
